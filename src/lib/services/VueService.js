@@ -6,7 +6,7 @@ export default class VueService extends Service
 
 	set app(value)
 	{
-		if (this.#app != null)
+		if (this.#app != null && !this.serviceManager.hmrEnv)
 			throw new Error("Cannot set VueService app instance twice.");
 		this.#app = value;
 	}

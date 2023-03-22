@@ -1,7 +1,8 @@
 import ServiceManager from "./services/ServiceManager";
 
-import DocumentService from "./services/DocumentService.js";
-import VueService from "./services/VueService.js";
+import DocumentService from "./services/DocumentService";
+import VueService from "./services/VueService";
+import KeyBindingsService from "./services/KeyBindingsService";
 
 const serviceManager = new ServiceManager();
 
@@ -12,6 +13,7 @@ if (import.meta.hot)
 
 serviceManager.register(DocumentService);
 serviceManager.register(VueService);
+serviceManager.register(KeyBindingsService);
 
 serviceManager.lockAndInit();
 

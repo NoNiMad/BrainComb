@@ -1,5 +1,7 @@
 <script>
 import { nextTick } from "vue";
+import TheFileDragDrop from "./components/TheFileDragDrop.vue";
+import TheAppKeyBindings from "./components/TheAppKeyBindings.vue";
 
 let nodeIdCounter = 0;
 function makeNode(content, children, parent)
@@ -71,13 +73,12 @@ function initViewBox(app)
 	});
 }
 
-import GlobalDragDrop from "./components/GlobalDragDrop.vue";
-
 export default
 {
 	inject: [ "commands", "services", "icons" ],
 	components: {
-		GlobalDragDrop,
+		TheFileDragDrop,
+		TheAppKeyBindings,
 	},
 	created()
 	{
@@ -149,7 +150,7 @@ export default
 	{
 		scheduleAutoLayout: function()
 		{
-			this.$nextTick(() => this.autoLayout());
+			nextTick(() => this.autoLayout());
 		},
 		loadFromText: function (text)
 		{
@@ -184,154 +185,42 @@ export default
 				alert("Failed to parse text into a mind map!");
 			}
 		},
-		keyDown: function (event)
+		startEditNode: function()
 		{
-			if (event.defaultPrevented || event.isComposing || event.keyCode === 229)
+			if (this.input.active)
 				return;
 
-			if (this.selected === null)
+			this.input.value = this.selected.content;
+			this.input.x = this.selected.x;
+			this.input.y = this.selected.y;
+			this.input.width = getSVGNode(this.selected).getBBox().width;
+			this.input.active = true;
+			nextTick(() => {
+				domElements.mapInput.focus();
+				domElements.mapInput.select();
+			});
+		},
+		stopEditNode: function()
+		{
+			if (!this.input.active)
 				return;
 			
-			if (this.input.active)
-			{
-				if (event.key === "Escape")
-				{
-					this.input.active = false;
-					this.input.w = 0;
-					this.input.h = 0;
-					domElements.appDiv.focus();
-				}
-				return;
-			}
-
-			switch (event.key)
-			{
-				case "Tab":
-					const newNode = this.addToSelected();
-					if (newNode !== null)
-					{
-						this.select(newNode);
-					}
-					break;
-				case "ArrowUp":
-					if (event.shiftKey)
-					{
-						const parentChildren = this.selected.parent.children;
-						const currentIndex = parentChildren.indexOf(this.selected);
-						if (currentIndex > 0)
-						{
-							parentChildren[currentIndex] = parentChildren[currentIndex - 1];
-							parentChildren[currentIndex - 1] = this.selected;
-							this.scheduleAutoLayout();
-						}
-					}
-					else
-					{
-						if (this.selected.parent !== null)
-						{
-							const parentChildren = this.selected.parent.children;
-							const currentIndex = parentChildren.indexOf(this.selected);
-							if (currentIndex > 0)
-							{
-								this.select(parentChildren[currentIndex - 1]);
-								break;
-							}
-						}
-						this.selectClosestToSelected(node => node.y < this.selected.y);
-					}
-					break;
-				case "ArrowDown":
-					if (event.shiftKey)
-					{
-						const parentChildren = this.selected.parent.children;
-						const currentIndex = parentChildren.indexOf(this.selected);
-						if (currentIndex < parentChildren.length - 1)
-						{
-							parentChildren[currentIndex] = parentChildren[currentIndex + 1];
-							parentChildren[currentIndex + 1] = this.selected;
-							this.scheduleAutoLayout();
-						}
-					}
-					else
-					{
-						if (this.selected.parent !== null)
-						{
-							const parentChildren = this.selected.parent.children;
-							const currentIndex = parentChildren.indexOf(this.selected);
-							if (currentIndex < parentChildren.length - 1)
-							{
-								this.select(parentChildren[currentIndex + 1]);
-								break;
-							}
-						}
-						this.selectClosestToSelected(node => node.y > this.selected.y);
-					}
-					break;
-				case "ArrowLeft":
-					if (this.selected.parent !== null)
-					{
-						this.select(this.selected.parent);
-					}
-					else
-					{
-						this.selectClosestToSelected(node => node.x < this.selected.x);
-					}
-					break;
-				case "ArrowRight":
-					if (this.selected.children.length > 0)
-					{
-						this.selectClosestToSelected(node => this.selected.children.includes(node));	
-					}
-					else
-					{
-						this.selectClosestToSelected(node => node.x > this.selected.x);
-					}
-					break;
-				case "Enter":
-					if (!this.input.active)
-					{
-						this.input.value = this.selected.content;
-						this.input.x = this.selected.x;
-						this.input.y = this.selected.y;
-						this.input.width = getSVGNode(this.selected).getBBox().width;
-						this.input.active = true;
-						Vue.nextTick(() => {
-							domElements.mapInput.focus();
-							domElements.mapInput.select();
-						});
-					}
-					break;
-				case "Delete":
-					if (this.selected.parent !== null)
-					{
-						const parentChildren = this.selected.parent.children;
-						const indexInParent = parentChildren.indexOf(this.selected);
-						parentChildren.splice(indexInParent, 1)
-						this.scheduleAutoLayout();
-
-						if (parentChildren.length > 0)
-						{
-							this.select(parentChildren[Math.max(0, indexInParent - 1)]);
-						}
-						else
-						{
-							this.select(this.selected.parent);
-						}
-					}
-					break;
-				case "c":
-					if (this.selected.children.length == 0)
-						return;
-					this.selected.collapsed = !this.selected.collapsed;
-					this.scheduleAutoLayout();
-					break;
-				default:
-					return;
-			}
-			event.preventDefault();
+			this.input.active = false;
+			this.input.w = 0;
+			this.input.h = 0;
+			domElements.appDiv.focus();
 		},
-		validateInput: function ()
+		onNodeInputCancel: function(event)
 		{
+			event.preventDefault();
+			event.stopPropagation();
+			this.stopEditNode();
+		},
+		onNodeInputValidate: function(event)
+		{
+			event.preventDefault();
+			event.stopPropagation();
+
 			const newValue = this.input.value.trim();
 			if (!this.input.active || newValue === "")
 				return;
@@ -354,21 +243,19 @@ export default
 		},
 		select: function (node)
 		{
-			this.validateInput();
+			this.stopEditNode();
 			this.selected = node;
 		},
-		addToSelected: function ()
+		addEmptyChild: function (parent, index)
 		{
-			if (this.selected != null)
-			{
-				const newNode = makeNode("New" + nodeIdCounter, [], this.selected)
-				this.selected.children.push(newNode);
-				
-				this.scheduleAutoLayout();
+			parent = parent ?? this.selected;
+			index = index ?? parent.children.length;
 
-				return newNode;
-			}
-			return null;
+			const newNode = makeNode("New" + nodeIdCounter, [], parent);
+			parent.children.splice(index, 0, newNode);
+			this.scheduleAutoLayout();
+
+			return newNode;
 		},
 		countLeaves: function (from)
 		{
@@ -421,6 +308,10 @@ export default
 	},
 	computed:
 	{
+		isEditing: function()
+		{
+			return this.input.active;
+		},
 		viewBox: function()
 		{
 			const minX = this.view.center.x - this.view.size.width / 2;
@@ -476,8 +367,9 @@ export default
 </script>
 
 <template>
-	<div id="app" @keydown="keyDown" tabindex="0" autofocus>
-		<GlobalDragDrop />
+	<div id="app" tabindex="0">
+		<TheFileDragDrop />
+		<TheAppKeyBindings :ignoreBindings="isEditing" />
 		<nav class="toolbar">
 			<ul>
 				<li>
@@ -530,7 +422,8 @@ export default
 						v-show="input.active"
 						type="text"
 						v-model="input.value"
-						@keypress.enter="validateInput" />
+						@keypress.enter="onNodeInputValidate($event)"
+						@keydown.esc="onNodeInputCancel($event)" />
 				</foreignObject>
 			</svg>
 		</div>

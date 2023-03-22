@@ -6,6 +6,9 @@ import { mdiFolderOpen, mdiContentSave, mdiBrain } from "@mdi/js";
 // Local dependencies
 import services from "./lib/services";
 import commands from "./lib/commands";
+import keyBindings from "./lib/keyBindings";
+
+keyBindings.forEach(binding => services.KeyBindingsService.register(binding));
 
 import "./style.css";
 import App from "./App.vue";
