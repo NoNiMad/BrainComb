@@ -1,407 +1,403 @@
-<script>
-import { nextTick } from "vue";
+<script setup>
+import { ref, reactive, computed, onMounted, nextTick } from "vue";
+import { mdiMagnify } from "@mdi/js";
 import TheFileDragDrop from "./components/TheFileDragDrop.vue";
-import TheAppKeyBindings from "./components/TheAppKeyBindings.vue";
+import TheToolbar from "./components/TheToolbar.vue";
+import TheNodeEditor from "./components/TheNodeEditor.vue";
+import KeyBindingsListener from "./components/KeyBindingsListener.vue";
+
+import { Command } from "./lib/Command";
+import { KeyBinding } from "./lib/KeyBinding";
+
+import { simpleLayout } from "./lib/LayoutAlgo";
+import { flatten } from "./lib/NodeHelpers";
+
+import * as NavigationController from "./lib/NavigationController";
+
+import { documentService } from "./lib/services";
+
+const appContainer = ref(null);
+const mindmapContainer = ref(null);
 
 let nodeIdCounter = 0;
-function makeNode(content, children, parent)
+let autoLayoutScheduled = false;
+const defaultMap = makeNode("Root", [
+	makeNode("Gameplay", [
+		makeNode("Levels"),
+		makeNode("Craft")
+	]),
+	makeNode("Story", [
+		makeNode("Introduction", [
+			makeNode("Cavern"),
+			makeNode("Solitude")
+		]),
+		makeNode("Reveal of the big city"),
+		makeNode("Battle"),
+		makeNode("Conclusion")
+	])
+]);
+
+const svgNodes = ref([]);
+function getSVGNode(node)
 {
+	return svgNodes.value.find(svgNode => svgNode.getAttribute("data-node") == node.id);
+}
+
+const data = reactive({
+	mapRoot: defaultMap,
+	settings:
+	{
+		leaveHeight: 60,
+		horizontalSpace: 70
+	},
+	ui:
+	{
+		globalDragDrop: false
+	}
+});
+
+onMounted(() =>
+{
+	documentService.addEventListener("fileLoaded", onFileLoaded);
+	scheduleAutoLayout();
+	select(data.mapRoot);
+});
+
+function onFileLoaded(event)
+{
+	loadFromText(event.detail);
+}
+
+//#region Mindmap View
+
+const mindmap = ref(null);
+import { useViewBox } from "./composables/viewBox.js";
+const { view, viewBox } = useViewBox(mindmap);
+const showZoom = computed(() => Math.round(view.zoom * 100) != 100);
+const zoomText = computed(() => {
+	const percentage = Math.round(view.zoom * 100);
+	return `${percentage}%`;
+});
+
+//#endregion
+
+const commands = reactive({
+	editNode: new Command(() => edition.isEditingNode = true, () => !edition.isEditingNode),
+	collapseNode: new Command(() => collapseNode(edition.selected), () => edition.selected.children.length > 0),
+	deleteNode: new Command(() => deleteNode(edition.selected), () => edition.selected.parent != null),
+	
+	selectUp: new Command(() => select(NavigationController.getNodeUp(data.mapRoot, edition.selected))),
+	selectDown: new Command(() => select(NavigationController.getNodeDown(data.mapRoot, edition.selected))),
+	selectLeft: new Command(() => select(NavigationController.getNodeLeft(data.mapRoot, edition.selected))),
+	selectRight: new Command(() => select(NavigationController.getNodeRight(data.mapRoot, edition.selected))),
+	
+	moveUp: new Command(
+		() => moveNode(edition.selected,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected) - 1),
+		() => canMoveNode(edition.selected,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected) - 1),
+	),
+	moveDown: new Command(
+		() => moveNode(edition.selected,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected) + 1),
+		() => canMoveNode(edition.selected,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected) + 1),
+	),
+	addBefore: new Command(
+		() => {
+			const newNode = makeNode();
+			insertChild(newNode,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected))
+			select(newNode);
+		},
+		() => edition.selected.parent !== null
+	),
+	addAfter: new Command(
+		() => {
+			const newNode = makeNode();
+			insertChild(newNode,
+				edition.selected.parent,
+				edition.selected.parent.children.indexOf(edition.selected) + 1)
+			select(newNode);
+		},
+		() => edition.selected.parent !== null
+	),
+	addChild: new Command(() => {
+		const newNode = makeNode();
+		insertChild(newNode, edition.selected);
+		select(newNode);
+	}),
+});
+
+const bindings = reactive([
+	new KeyBinding("Edit node", "Enter", {}, commands.editNode),
+	new KeyBinding("Collapse node", "c", {}, commands.collapseNode),
+	new KeyBinding("Remove node", "Delete", {}, commands.deleteNode),
+	new KeyBinding("Select up", "ArrowUp", {}, commands.selectUp),
+	new KeyBinding("Select down", "ArrowDown", {}, commands.selectDown),
+	new KeyBinding("Select left", "ArrowLeft", {}, commands.selectLeft),
+	new KeyBinding("Select right", "ArrowRight", {}, commands.selectRight),
+	new KeyBinding("Move up", "ArrowUp", { alt: true }, commands.moveUp),
+	new KeyBinding("Move down", "ArrowDown", { alt: true }, commands.moveDown),
+	new KeyBinding("Add sibling before", "ArrowUp", { shift: true }, commands.addBefore),
+	new KeyBinding("Add sibling after", "ArrowDown", { shift: true }, commands.addAfter),
+	new KeyBinding("Add child", "ArrowRight", { shift: true }, commands.addChild)
+]);
+
+function scheduleAutoLayout()
+{
+	if (autoLayoutScheduled)
+		return;
+
+	autoLayoutScheduled = true;
+	nextTick(() => {
+		autoLayoutScheduled = false;
+		simpleLayout(data.mapRoot, data.settings, getSVGNode)
+	});
+};
+function loadFromText(text)
+{
+	try
+	{
+		const parsed = JSON.parse(text);
+		function processNode(node, parent)
+		{
+			node.parent = parent;
+			node.x = 0;
+			node.y = 0;
+			node.collapsed = node.collapsed ?? false;
+			nodeIdCounter = Math.max(nodeIdCounter, node.id + 1);
+			
+			if (node.children === undefined)
+			{
+				node.children = [];
+			}
+			else
+			{
+				node.children.forEach(child => processNode(child, node));
+			}
+		}
+		processNode(parsed, null);
+		data.mapRoot = parsed;
+		select(data.mapRoot);
+		scheduleAutoLayout();
+	}
+	catch (error)
+	{
+		console.error(error);
+		alert("Failed to parse text into a mind map!");
+	}
+}
+
+
+//#region Edition
+
+const nodeEditor = ref(null);
+const edition = reactive({
+	isEditingNode: false,
+	selected: null
+});
+
+function onNodeEditionEnded(newValue)
+{
+	edition.isEditingNode = false;
+	if (newValue)
+	{
+		edition.selected.content = newValue.content;
+		scheduleAutoLayout();
+	}
+}
+
+function select(node)
+{
+	if (node == null)
+		return;
+
+	if (edition.isEditingNode)
+		onNodeEditionEnded();
+	
+	edition.selected = node;
+}
+
+function makeNode(content, children)
+{
+	const newId = nodeIdCounter++;
 	const newNode = {
-		id: nodeIdCounter++,
-		content,
-		parent: parent ?? null,
-		children: children ?? [],
+		id: newId,
+		content: content ?? `Node${newId}`,
+		parent: null,
+		children: [],
 		x: 0,
 		y: 0,
 		collapsed: false
 	};
 
-	newNode.children.forEach(child => child.parent = newNode);
+	if (children)
+	{
+		children.forEach(child => insertChild(child, newNode));
+	}
 	return newNode;
 }
 
-function sqrDistBetweenNodes(nodeA, nodeB)
+function insertChild(child, parent, index)
 {
-	return (nodeA.x - nodeB.x) * (nodeA.x - nodeB.x) + (nodeA.y - nodeB.y) * (nodeA.y - nodeB.y);
+	if (!canInsertChild(child, parent, index))
+		throw new Error(`Cannot insert "${child.content}" in "${parent.content}" at index ${index}.`);
+
+	child.parent = parent;
+	parent.children.splice(index ?? parent.children.length, 0, child);
+	scheduleAutoLayout();
 }
 
-function getSVGNode(node)
+function canInsertChild(child, parent, index)
 {
-	return document.querySelector(`#mindmap #node-${node.id}`);
+	return index == undefined || index >= 0 && index <= parent.children.length;
 }
 
-function getClosest(to, nodes)
+function moveNode(node, targetParent, index)
 {
-	return nodes.reduce((min, node) => {
-		const dist = sqrDistBetweenNodes(node, to);
-		return min === null || dist < min.dist ? { dist, node } : min;
-	}, null);
+	if (!canMoveNode(node, targetParent, index))
+		throw new Error(`Cannot move "${child.content}" to "${parent.content}" at index ${index}.`);
+	
+	const currentIndex = node.parent.children.indexOf(node);
+	node.parent.children.splice(currentIndex, 1);
+	insertChild(node, targetParent, index);
+	scheduleAutoLayout();
 }
 
-const domElements = {};
-const minViewSize = { width: 360, height: 360 };
-
-function initViewBox(app)
+function canMoveNode(node, targetParent, index)
 {
-	app.view.size =
-	{
-		width: Math.max(document.body.clientWidth, minViewSize.width),
-		height: Math.max(document.body.clientHeight, minViewSize.height)
-	};
+	if (node.parent === null)
+		return false;
+	
+	if (node.parent == targetParent)
+		return index >= 0 && index < targetParent.children.length;
 
-	domElements.mindmapDiv.addEventListener("mousedown", event => {
-		app.view.isDragging = true;
-		app.view.lastDrag = { x: event.clientX, y: event.clientY };
-	});
-
-	domElements.mindmapDiv.addEventListener("mousemove", event => {
-		if (!app.view.isDragging)
-			return;
-		
-		app.view.center.x -= event.clientX - app.view.lastDrag.x;
-		app.view.center.y -= event.clientY - app.view.lastDrag.y;
-		app.view.lastDrag = { x: event.clientX, y: event.clientY };
-	});
-
-	domElements.mindmapDiv.addEventListener("mouseup", _ => {
-		app.view.isDragging = false;
-	});
-
-	domElements.mindmapDiv.addEventListener("wheel", ev => {
-		app.view.size.width = Math.max(minViewSize.width, app.view.size.width + ev.deltaY);
-		app.view.size.height = Math.max(minViewSize.height, app.view.size.height + ev.deltaY);
-	});
+	return canInsertChild(node, targetParent, index);
 }
 
-export default
+function collapseNode(node)
 {
-	inject: [ "commands", "services", "icons" ],
-	components: {
-		TheFileDragDrop,
-		TheAppKeyBindings,
-	},
-	created()
+	if (node.children.length == 0)
+		return false;
+
+	node.collapsed = !node.collapsed;
+	scheduleAutoLayout();
+}
+
+function deleteNode(node)
+{	
+	const parentChildren = node.parent.children;
+	const indexInParent = parentChildren.indexOf(node);
+	parentChildren.splice(indexInParent, 1);
+
+	if (parentChildren.length > 0)
 	{
-		this.services.VueService.app = this;
-
-		nextTick(() => {
-			domElements.appDiv = document.getElementById("app");
-			domElements.mindmapContainerDiv = document.getElementById("mindmap-container");
-			domElements.mindmapDiv = document.getElementById("mindmap");
-			domElements.mapInput = document.getElementById("map-input");
-
-			initViewBox(this);
-
-			this.autoLayout();
-			this.select(this.mapRoot);
-
-			domElements.appDiv.focus();
-		});
-	},
-	data()
-	{
-		return {
-			selected: null,
-			mapRoot: makeNode("Root", [
-				makeNode("Gameplay", [
-					makeNode("Levels"),
-					makeNode("Craft")
-				]),
-				makeNode("Story", [
-					makeNode("Introduction", [
-						makeNode("Cavern"),
-						makeNode("Solitude")
-					]),
-					makeNode("Reveal of the big city"),
-					makeNode("Battle"),
-					makeNode("Conclusion")
-				])
-			]),
-			input:
-			{
-				active: false,
-				value: "",
-				x: 0,
-				y: 0,
-				width: 0
-			},
-			view:
-			{
-				center: { x: 0, y: 0 },
-				size: { width: 0, height: 0 },
-				lastDrag: { x: 0, y: 0 },
-				isDragging: false
-			},
-			settings:
-			{
-				leaveHeight: 60,
-				horizontalSpace: 70
-			},
-			ui:
-			{
-				iconsPath: {
-
-				},
-				globalDragDrop: false
-			}
-		};
-	},
-	methods:
-	{
-		scheduleAutoLayout: function()
-		{
-			nextTick(() => this.autoLayout());
-		},
-		loadFromText: function (text)
-		{
-			try
-			{
-				const parsed = JSON.parse(text);
-				function processNode(node, parent)
-				{
-					node.parent = parent;
-					node.x = 0;
-					node.y = 0;
-					node.collapsed = node.collapsed ?? false;
-					nodeIdCounter = Math.max(nodeIdCounter, node.id + 1);
-					
-					if (node.children === undefined)
-					{
-						node.children = [];
-					}
-					else
-					{
-						node.children.forEach(child => processNode(child, node));
-					}
-				}
-				processNode(parsed, null);
-				this.mapRoot = parsed;
-				this.select(this.mapRoot);
-				this.scheduleAutoLayout();
-			}
-			catch (error)
-			{
-				console.error(error);
-				alert("Failed to parse text into a mind map!");
-			}
-		},
-		startEditNode: function()
-		{
-			if (this.input.active)
-				return;
-
-			this.input.value = this.selected.content;
-			this.input.x = this.selected.x;
-			this.input.y = this.selected.y;
-			this.input.width = getSVGNode(this.selected).getBBox().width;
-			this.input.active = true;
-			nextTick(() => {
-				domElements.mapInput.focus();
-				domElements.mapInput.select();
-			});
-		},
-		stopEditNode: function()
-		{
-			if (!this.input.active)
-				return;
-			
-			this.input.active = false;
-			this.input.w = 0;
-			this.input.h = 0;
-			domElements.appDiv.focus();
-		},
-		onNodeInputCancel: function(event)
-		{
-			event.preventDefault();
-			event.stopPropagation();
-			this.stopEditNode();
-		},
-		onNodeInputValidate: function(event)
-		{
-			event.preventDefault();
-			event.stopPropagation();
-
-			const newValue = this.input.value.trim();
-			if (!this.input.active || newValue === "")
-				return;
-
-			this.input.active = false;
-			this.selected.content = newValue;
-			domElements.appDiv.focus();
-			this.scheduleAutoLayout();
-		},
-		selectClosestToSelected: function (filter)
-		{
-			const closest = getClosest(
-				this.selected,
-				this.allNodes().filter(filter)
-			);
-			if (closest !== null)
-			{
-				this.select(closest.node);
-			}
-		},
-		select: function (node)
-		{
-			this.stopEditNode();
-			this.selected = node;
-		},
-		addEmptyChild: function (parent, index)
-		{
-			parent = parent ?? this.selected;
-			index = index ?? parent.children.length;
-
-			const newNode = makeNode("New" + nodeIdCounter, [], parent);
-			parent.children.splice(index, 0, newNode);
-			this.scheduleAutoLayout();
-
-			return newNode;
-		},
-		countLeaves: function (from)
-		{
-			return this.allNodes(from).filter(node => node.children.length === 0 || node.collapsed).length;
-		},
-		autoLayout: function ()
-		{
-			const _this = this;
-			function visitChildren(node)
-			{
-				if (node.children.length === 0 || node.collapsed)
-					return;
-
-				const svgNode = getSVGNode(node);
-				const xSpace = svgNode.getBBox().width;
-				const nodeLeavesCount = _this.countLeaves(node);
-				
-				let leavesCounter = 0;
-				node.children.forEach((child, i) =>
-				{
-					child.x = node.x + xSpace + _this.settings.horizontalSpace;
-
-					const childLeavesCount = _this.countLeaves(child);
-					child.y = node.y + _this.settings.leaveHeight * (
-						leavesCounter // Current offset
-						+ childLeavesCount / 2 // To place in middle of children
-						- nodeLeavesCount / 2 // Half parent count for centering
-					);
-					leavesCounter += childLeavesCount;
-
-					visitChildren(child);
-				});
-			}
-
-			this.mapRoot.x = 0;
-			this.mapRoot.y = 0;
-			visitChildren(this.mapRoot);
-		},
-		allNodes: function (from)
-		{
-			function flattenNode(node)
-			{
-				if (node.collapsed === true)
-					return [node];
-				return [node].concat(node.children.flatMap(child => flattenNode(child)));
-			}
-
-			return flattenNode(from ?? this.mapRoot);
-		}
-	},
-	computed:
-	{
-		isEditing: function()
-		{
-			return this.input.active;
-		},
-		viewBox: function()
-		{
-			const minX = this.view.center.x - this.view.size.width / 2;
-			const minY = this.view.center.y - this.view.size.height / 2;
-			return `${minX} ${minY} ${this.view.size.width} ${this.view.size.height}`;
-		},
-		nodesToDraw: function ()
-		{
-			return this.allNodes();
-		},
-		connectionsToDraw: function ()
-		{
-			function gatherConnections(node)
-			{
-				if (node.children.length === 0 || node.collapsed)
-					return [];
-				
-				const svgNode = getSVGNode(node);
-				const nodeWidth = svgNode?.getBBox().width ?? -10;
-
-				const connections = [];
-				node.children.forEach((child, i) =>
-				{
-					const xOffset = 5;
-					const yOffset = -5;
-					const connection = {
-						id: `node-${node.id}-${i}`,
-						startX: node.x + nodeWidth + xOffset,
-						startY: node.y + yOffset,
-						endX: child.x - xOffset,
-						endY: child.y + yOffset
-					};
-					connection.distX = connection.endX - connection.startX;
-					connection.distY = connection.endY - connection.startY;
-
-					connection.path =
-						`M
-							${connection.startX} ${connection.startY}
-						C
-							${connection.startX + connection.distX / 2} ${connection.startY},
-							${connection.endX - connection.distX / 2} ${connection.endY},
-							${connection.endX} ${connection.endY}`;
-
-					connections.push(connection, ...gatherConnections(child));
-				});
-				return connections;
-			}
-
-			return gatherConnections(this.mapRoot);
-		}
+		select(parentChildren[Math.max(0, indexInParent - 1)]);
 	}
-};
+	else
+	{
+		select(edition.selected.parent);
+	}
+	scheduleAutoLayout();
+}
+
+//#endregion
+
+const nodesToDraw = computed(() =>
+{
+	return flatten(data.mapRoot);
+});
+const connectionsToDraw = computed(() =>
+{
+	function gatherConnections(node)
+	{
+		if (node.children.length === 0 || node.collapsed)
+			return [];
+		
+		const svgNode = getSVGNode(node);
+		const nodeWidth = svgNode?.getBBox().width ?? -10;
+
+		const connections = [];
+		node.children.forEach((child, i) =>
+		{
+			const xOffset = 5;
+			const yOffset = -5;
+			const connection = {
+				id: `node-${node.id}-${i}`,
+				startX: node.x + nodeWidth + xOffset,
+				startY: node.y + yOffset,
+				endX: child.x - xOffset,
+				endY: child.y + yOffset
+			};
+			connection.distX = connection.endX - connection.startX;
+			connection.distY = connection.endY - connection.startY;
+
+			connection.path =
+				`M
+					${connection.startX} ${connection.startY}
+				C
+					${connection.startX + connection.distX / 2} ${connection.startY},
+					${connection.endX - connection.distX / 2} ${connection.endY},
+					${connection.endX} ${connection.endY}`;
+
+			connections.push(connection, ...gatherConnections(child));
+		});
+		return connections;
+	}
+
+	return gatherConnections(data.mapRoot);
+});
 </script>
 
 <template>
-	<div id="app" tabindex="0">
+	<div ref="appContainer" id="app" tabindex="0">
 		<TheFileDragDrop />
-		<TheAppKeyBindings :ignoreBindings="isEditing" />
-		<nav class="toolbar">
-			<ul>
-				<li>
-					<svg-icon type="mdi" :path="icons.brain"></svg-icon>
-				</li>
-				<li>SimpleMind</li>
-			</ul>
-			<ul>
-				<li>
-					<button @click="commands.OpenFile.execute()">
-						<svg-icon type="mdi" :path="icons.folderOpen"></svg-icon>
-						<span>Open</span>
-					</button>
-				</li>
-				<li>
-					<button @click="commands.SaveFile.execute()">
-						<svg-icon type="mdi" :path="icons.contentSave"></svg-icon>
-						<span>Download</span>
-					</button>
-				</li>
-			</ul>
-		</nav>
-		<div id="mindmap-container">
-			<svg xmlns="http://www.w3.org/2000/svg" id="mindmap" :view-box.camel="viewBox">
+		<TheToolbar :document="data.mapRoot" />
+		<div
+			ref="mindmapContainer"
+			id="mindmap-container">
+			<div
+				id="mindmap-background"
+				:style="{
+					backgroundPositionX: `${-view.center.x * view.zoom}px`,
+					backgroundPositionY: `${-view.center.y * view.zoom}px`,
+					backgroundSize: `${view.zoom*100}px ${view.zoom*100}px, ${view.zoom*20}px ${view.zoom*20}px`
+				}">
+			</div>
+			<aside class="left-side-panels">
+				<KeyBindingsListener :bindings="bindings" :disabled="edition.isEditingNode" />
+			</aside>
+			<aside class="right-side-panels">
+				<section v-show="showZoom">
+					<article class="text-with-icons">
+						{{ zoomText }}
+						<svg-icon type="mdi" :path="mdiMagnify"></svg-icon>
+					</article>
+				</section>
+			</aside>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				id="mindmap"
+				ref="mindmap"
+				:view-box.camel="viewBox">
 				<g
 					v-for="node in nodesToDraw"
-					:key="`node-${node.id}`"
-					:id="`node-${node.id}`"
-					:transform="`translate(${node.x}, ${node.y})`"
+					:key="node.id"
+					ref="svgNodes"
+
 					@click.left="select(node)"
+
+					:transform="`translate(${node.x}, ${node.y})`"
+
+					:data-node="node.id"
 					class="node"
-					:class="{ selected: selected === node, collapsed: node.collapsed }">
+					:class="{ selected: edition.selected === node, collapsed: node.collapsed }">
 					<text>{{node.content}}</text>
 				</g>
 				<g
@@ -413,22 +409,75 @@ export default
 						stroke="white"
 						fill="transparent" />
 				</g>
-				<foreignObject
-					:x="input.x - 50" :y="input.y - settings.leaveHeight / 4"
-					:width="input.active ? input.width + 100 : 0"
-					:height="input.active ? settings.leaveHeight / 2 : 0">
-					<input
-						id="map-input"
-						v-show="input.active"
-						type="text"
-						v-model="input.value"
-						@keypress.enter="onNodeInputValidate($event)"
-						@keydown.esc="onNodeInputCancel($event)" />
-				</foreignObject>
+				<TheNodeEditor
+					ref="nodeEditor"
+					:active="edition.isEditingNode"
+					:targetNode="edition.selected"
+					:settings="data.settings"
+					@edition-ended="onNodeEditionEnded"/>
 			</svg>
 		</div>
 	</div>
 </template>
 
 <style scoped>
+#app
+{
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+#mindmap-container
+{
+	position: relative;
+	flex-grow: 1;
+}
+
+#mindmap-background
+{
+	display: none;
+	width: 100%;
+	height: 100%;
+	background-image:
+		conic-gradient(at calc(100% - 2px) calc(100% - 2px),#555 270deg, #0000 0),
+		conic-gradient(at calc(100% - 1px) calc(100% - 1px),#444 270deg, #0000 0);
+	background-size: 100px 100px, 20px 20px;
+}
+
+#mindmap-container > *
+{
+	position: absolute;
+	overflow: hidden;
+}
+
+#mindmap
+{
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#mindmap .node
+{
+	fill: var(--color-text);
+	position: relative;
+}
+
+#mindmap .node.selected
+{
+	fill: red;
+}
+
+#mindmap .node.collapsed
+{
+	font-style: italic;
+}
+
+#mindmap .connection
+{
+	stroke: var(--color-text);
+	fill: transparent;
+}
 </style>

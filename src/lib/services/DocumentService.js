@@ -1,5 +1,4 @@
-import Service from "./Service";
-import VueService from "./VueService";
+import { Service } from "./Service";
 
 export default class DocumentService extends Service
 {
@@ -8,7 +7,7 @@ export default class DocumentService extends Service
 	loadFromFile(file)
 	{
 		this.#internalLoadFromFile(file).then(fileContent => {
-			this.serviceManager.get(VueService).app.loadFromText(fileContent);
+			this.dispatchEvent(new CustomEvent("fileLoaded", { detail: fileContent }));
 		});
 	}
 
@@ -36,10 +35,8 @@ export default class DocumentService extends Service
 		return this.#lastDocumentName;
 	}
 
-	getDownloadUrl()
+	getDownloadUrl(documentRoot)
 	{
-		const documentRoot = this.serviceManager.get(VueService).app.mapRoot;
-
 		const ignoredKeys = [ "parent", "x", "y" ]
 		const serialized = JSON.stringify(
 			documentRoot,

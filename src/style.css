@@ -18,104 +18,55 @@ body,
 
 	color: var(--color-text);
 	background-color: var(--color-bg);
+
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-#app
+.text-with-icons
 {
-	display: flex;
-	flex-direction: column;
+	margin-top: -8px;
 }
 
-.toolbar
-{
-	display: flex;
-	margin: 0;
-	padding: 0;
-
-	background-color: var(--color-bg-alt);
-}
-
-.toolbar ul
-{
-	display: flex;
-	align-items: center;
-	gap: 0.3em;
-	margin: 0;
-	padding: 0.4em;
-
-	list-style-type: none;
-}
-
-.toolbar li
-{
-	margin: 0;
-	padding: 0;
-}
-
-.toolbar button
-{
-	display: flex;
-	align-items: center;
-	gap: 0.3em;
-	padding: 0.3em 0.5em;
-
-	border: none;
-	outline: none;
-	background-color: var(--color-bg);
-	color: var(--color-text);
-}
-
-.toolbar button:hover
-{
-	filter: brightness(120%);
-}
-
-#mindmap-container
+.text-with-icons svg-icon
 {
 	position: relative;
-	flex-grow: 1;
-	background-position: left center;
-    	/*background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZlNmU2ZSIgb3BhY2l0eT0iMC4yIiBzdHJva2Utd2lkdGg9IjEiLz48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNmU2ZTZlIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=");*/
+	top: 8px;
 }
 
-#mindmap-container > * {
+aside
+{
 	position: absolute;
-	overflow: hidden;
+	top: 1em;
+	z-index: 1000;
 }
 
-#mindmap {
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-}
-
-#mindmap .node {
-	fill: var(--color-text);
-	position: relative;
-}
-
-#mindmap .node.selected {
-	fill: red;
-}
-
-#mindmap .node.collapsed {
-	font-style: italic;
-}
-
-#mindmap .connection
+aside.left-side-panels
 {
-	stroke: var(--color-text);
-	fill: transparent;
+	left: 1em;
+}
+aside.right-side-panels
+{
+	right: 1em;
 }
 
-#map-input
+aside section
 {
-	margin: 0;
-	padding: 0;
-	width: calc(100% - 8px);
-	height: calc(100% - 6px);
+	padding: 1em;
 
-	border: 1px solid black;
-	outline: none;
+	border-radius: 0.5em;
+	background-color: var(--color-bg-alt);
+	
+	opacity: 0.5;
+	transition: opacity 0.5s;
+}
+
+aside section:hover
+{
+	opacity: 1;
+}
+
+aside section header
+{
+	font-size: 1.5em;
+	margin-bottom: 0.5em;
 }

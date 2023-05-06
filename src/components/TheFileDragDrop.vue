@@ -1,7 +1,7 @@
 <script setup>
-import { inject, reactive } from "vue";
+import { reactive } from "vue";
+import { documentService } from "../lib/services";
 
-const services = inject("services");
 const state = reactive({
 	isDrapDropActive: false
 });
@@ -43,7 +43,7 @@ document.addEventListener("drop", event => {
 	if (filesArray.length == 0)
 		return false;
 	
-	services.DocumentService.loadFromFile(filesArray[0]);
+	documentService.loadFromFile(filesArray[0]);
 	return false;
 });
 </script>

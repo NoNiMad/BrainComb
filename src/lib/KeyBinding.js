@@ -1,41 +1,56 @@
-export default class KeyBinding
+export class KeyBinding
 {
-	// User-friendly display name
-	#name;
-	get name() { return this.#name; }
+	_name;
+	/**
+	 * User-friendly display name.
+	 */
+	get name() { return this._name; }
 
-	// KeyEvent.key
-	#key;
-	get key() { return this.#key; }
+	/**
+	 * The key for this key-binding.
+	 */
+	_key;
+	get key() { return this._key; }
 
-	// Modifiers
-	#ctrl = false;
-	#alt = false;
-	#shift = false;
+	_ctrl = false;
+	/**
+	 * Control key modifier.
+	 */
+	get ctrl() { return this._ctrl; }
 
-	get ctrl() { return this.#ctrl; }
-	get alt() { return this.#alt; }
-	get shift() { return this.#shift; }
+	_alt = false;
+	/**
+	 * Alt key modifier.
+	 */
+	get alt() { return this._alt; }
+	
+	_shift = false;
+	/**
+	 * Shift key modifier.
+	 */
+	get shift() { return this._shift; }
 
-	// Action linked to the binding
-	#action;
-	get action() { return this.#action; }
-
-	constructor(name, key, modifiers, action)
+	/**
+	 * Command to execute.
+	 */
+	_command;
+	get command() { return this._command; }
+	
+	constructor(name, key, modifiers, command)
 	{
-		this.#name = name;
-		this.#key = key;
-		this.#ctrl = modifiers.ctrl ?? false;
-		this.#alt = modifiers.alt ?? false;
-		this.#shift = modifiers.shift ?? false;
-		this.#action = action;
+		this._name = name;
+		this._key = key;
+		this._ctrl = modifiers.ctrl ?? false;
+		this._alt = modifiers.alt ?? false;
+		this._shift = modifiers.shift ?? false;
+		this._command = command;
 	}
 
 	matches(key, modifiers)
 	{
-		return this.#key === key
-			&& this.#ctrl === (modifiers.ctrl ?? false)
-			&& this.#alt === (modifiers.alt ?? false)
-			&& this.#shift === (modifiers.shift ?? false);
+		return this._key === key
+			&& this._ctrl === (modifiers.ctrl ?? false)
+			&& this._alt === (modifiers.alt ?? false)
+			&& this._shift === (modifiers.shift ?? false);
 	}
 }
