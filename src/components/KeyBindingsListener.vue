@@ -70,7 +70,7 @@ function getIconPathFor(key)
 		<div class="key" v-if="binding.shift">Shift</div>
 		<div class="key" v-if="shouldDisplayKeyName(binding.key)">{{ binding.key }}</div>
 		<div class="key" v-else>
-			<svg-icon type="mdi" :path="getIconPathFor(binding.key)"></svg-icon>
+			<svg-icon :path="getIconPathFor(binding.key)"></svg-icon>
 		</div>
 		<div>{{ binding.name }}</div>
 	</article>

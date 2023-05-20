@@ -24,13 +24,13 @@ body,
 
 .text-with-icons
 {
-	margin-top: -8px;
+	margin-top: -11px;
 }
 
 .text-with-icons svg-icon
 {
 	position: relative;
-	top: 8px;
+	top: 7px;
 }
 
 aside

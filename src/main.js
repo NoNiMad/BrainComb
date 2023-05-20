@@ -1,7 +1,7 @@
 // External dependencies
 import { createApp } from "vue";
-import "@jamescoyle/svg-icon";
 
+import "./SvgIcon.js";
 import "./style.css";
 import App from "./App.vue";
 

@@ -1,14 +1,12 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@jamescoyle/svg-icon': ^0.1.1
   '@mdi/js': ^7.1.96
   '@vitejs/plugin-vue': ^4.0.0
   vite: ^4.1.0
   vue: ^3.2.45
 
 dependencies:
-  '@jamescoyle/svg-icon': 0.1.1
   '@mdi/js': 7.1.96
   vue: 3.2.47
 
@@ -238,10 +236,6 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
-
-  /@jamescoyle/svg-icon/0.1.1:
-    resolution: {integrity: sha512-SFxucVGGuI9MzxzzhazmbNP2Qqq3MJH420WPTI3z2OvTCjqr4k38HYEZ63ePKKILUvIFKXZNAm6+hwVcZc5Wvw==}
-    dev: false
 
   /@mdi/js/7.1.96:
     resolution: {integrity: sha512-wlrJs6Ryhaa5CqhK3FjTfMRnb/s7HeLkKMFqwQySkK86cdN1TGdzpSM3O4tsmzCA1dYBeTbXvOwSE/Y42cUrvA==}

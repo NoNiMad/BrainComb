@@ -1,7 +1,10 @@
 {
   "name": "simple-mind",
   "private": true,
-  "author": { "name": "NoNiMad", "url": "https://nonimad.fr" },
+  "author": {
+    "name": "NoNiMad",
+    "url": "https://nonimad.fr"
+  },
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -9,8 +12,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "repository": {
+	"type": "git",
+	"url": "git+https://github.com/NoNiMad/SimpleMind.git"
+  },
   "dependencies": {
-    "@jamescoyle/svg-icon": "^0.1.1",
     "@mdi/js": "^7.1.96",
     "vue": "^3.2.45"
   },

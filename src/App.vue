@@ -377,7 +377,7 @@ const connectionsToDraw = computed(() =>
 				<section v-show="showZoom">
 					<article class="text-with-icons">
 						{{ zoomText }}
-						<svg-icon type="mdi" :path="mdiMagnify"></svg-icon>
+						<svg-icon :path="mdiMagnify"></svg-icon>
 					</article>
 				</section>
 			</aside>

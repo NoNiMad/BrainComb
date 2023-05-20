@@ -31,7 +31,7 @@ function saveFile()
 		<ul>
 			<li>
 				<div class="text-with-icons">
-					<svg-icon type="mdi" :path="mdiBrain"></svg-icon>
+					<svg-icon :path="mdiBrain"></svg-icon>
 					SimpleMind
 				</div>
 				<input class="hide" ref="fileInput" type="file" @change="onFileInputChanged($event)" />
@@ -41,7 +41,7 @@ function saveFile()
 			<li>
 				<button @click="openFile()">
 					<div class="text-with-icons">
-						<svg-icon type="mdi" :path="mdiFolderOpen"></svg-icon>
+						<svg-icon :path="mdiFolderOpen"></svg-icon>
 						Open
 					</div>
 				</button>
@@ -49,7 +49,7 @@ function saveFile()
 			<li>
 				<button @click="saveFile()">
 					<div class="text-with-icons">
-						<svg-icon type="mdi" :path="mdiContentSave"></svg-icon>
+						<svg-icon :path="mdiContentSave"></svg-icon>
 						Download
 					</div>
 					<a class="hide" ref="downloadLink"></a>
