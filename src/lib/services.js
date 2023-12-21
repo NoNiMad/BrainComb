@@ -1,3 +1,3 @@
-import DocumentService from "./services/DocumentService.js";
+import FileService from "./services/FileService";
 
-export const documentService = new DocumentService();
+export const fileService = new FileService();

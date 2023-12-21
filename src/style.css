@@ -38,6 +38,10 @@ aside
 	position: absolute;
 	top: 1em;
 	z-index: 1000;
+	
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
 }
 
 aside.left-side-panels

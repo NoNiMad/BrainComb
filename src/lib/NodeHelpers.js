@@ -13,7 +13,7 @@ export function flatten(startNode, includeCollapsed)
 
 export function getClosestFiltered(startNode, document, filter)
 {
-	const nodesToSearch = flatten(document).filter(filter);
+	const nodesToSearch = flatten(document.root).filter(filter);
 	return getClosest(startNode, nodesToSearch);
 }
 

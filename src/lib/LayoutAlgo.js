@@ -1,14 +1,38 @@
 import { countLeaves } from "./NodeHelpers";
 
-export function simpleLayout(mapRoot, settings, getElement)
+const svgNS = "http://www.w3.org/2000/svg";
+let _svgNode = null;
+let _textNode = null;
+function enableMeasuring()
+{
+	_svgNode = document.createElementNS(svgNS, "svg");
+	_textNode = document.createElementNS(svgNS, "text");
+	
+	_svgNode.appendChild(_textNode);
+	document.body.appendChild(_svgNode);
+}
+
+function getTextWidth(text)
+{
+	_textNode.textContent = text;
+	return _textNode.getBBox().width;
+}
+
+function disableMeasuring()
+{
+	document.body.removeChild(_svgNode);
+	_svgNode = null;
+	_textNode = null;
+}
+
+export function simpleLayout(document, settings)
 {
 	function visitChildren(node)
 	{
 		if (node.children.length === 0 || node.collapsed)
 			return;
 
-		const svgNode = getElement(node);
-		const xSpace = svgNode.getBBox().width;
+		const xSpace = getTextWidth(node.name);
 		const nodeLeavesCount = countLeaves(node);
 		
 		let leavesCounter = 0;
@@ -28,7 +52,12 @@ export function simpleLayout(mapRoot, settings, getElement)
 		});
 	}
 
-	mapRoot.x = 0;
-	mapRoot.y = 0;
-	visitChildren(mapRoot);
+	enableMeasuring();
+
+	const root = document.root;
+	root.x = 0;
+	root.y = 0;
+	visitChildren(root);
+
+	disableMeasuring();
 }

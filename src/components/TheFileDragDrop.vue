@@ -1,10 +1,8 @@
 <script setup>
-import { reactive } from "vue";
-import { documentService } from "../lib/services";
+import { ref } from "vue";
+import { fileService } from "../lib/services";
 
-const state = reactive({
-	isDrapDropActive: false
-});
+const isDrapDropActive = ref(false);
 
 let dragTarget;
 document.addEventListener("dragenter", event => {
@@ -13,7 +11,7 @@ document.addEventListener("dragenter", event => {
 
 	dragTarget = event.target;
 	
-	state.isDrapDropActive = true;
+	isDrapDropActive.value = true;
 	return false;
 });
 
@@ -22,7 +20,7 @@ document.addEventListener("dragleave", event => {
 	{
 		event.stopPropagation();
 		event.preventDefault();
-		state.isDrapDropActive = false;
+		isDrapDropActive.value = false;
 	}
 	return false;
 });
@@ -37,19 +35,19 @@ document.addEventListener("drop", event => {
 	event.stopPropagation();
 	event.preventDefault();
 
-	state.isDrapDropActive = false;
+	isDrapDropActive.value = false;
 
 	const filesArray = event.dataTransfer.files;
 	if (filesArray.length == 0)
 		return false;
 	
-	documentService.loadFromFile(filesArray[0]);
+	fileService.loadFromFile(filesArray[0]);
 	return false;
 });
 </script>
 
 <template>
-	<div id="global-drag-drop" v-show="state.isDrapDropActive">
+	<div id="global-drag-drop" v-show="isDrapDropActive">
 		<div>
 			Drop your document to load it
 		</div>

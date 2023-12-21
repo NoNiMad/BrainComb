@@ -1,29 +1,34 @@
 <script setup>
+import { onMounted } from "vue";
 import { mdiArrowUpThin, mdiArrowDownThin, mdiArrowLeftThin, mdiArrowRightThin } from "@mdi/js";
 
-const props = defineProps([ "bindings", "disabled" ]);
+const props = defineProps([ "bindings" ]);
 
-document.addEventListener("keydown", event => {
-	if (event.defaultPrevented || event.isComposing || props.disabled)
-		return;
-	
-	const binding = findBinding(event.key, {
-		ctrl: event.ctrlKey,
-		alt: event.altKey,
-		shift: event.shiftKey
+onMounted(() => {
+	document.addEventListener("keydown", event => {
+		if (event.defaultPrevented
+			|| event.isComposing
+			|| document.activeElement.id !== "mindmap")
+			return;
+		
+		const binding = findBinding(event.key, {
+			ctrl: event.ctrlKey,
+			alt: event.altKey,
+			shift: event.shiftKey
+		});
+		if (binding == null)
+			return;
+		
+		if (binding.command.canExecute())
+		{
+			binding.command.execute();
+		}
+		
+		event.preventDefault()
+		event.stopPropagation();
+		return false;
 	});
-	if (binding == null)
-		return;
-	
-	if (binding.command.canExecute())
-	{
-		binding.command.execute();
-	}
-	
-	event.preventDefault()
-	event.stopPropagation();
-	return false;
-});
+})
 
 function findBinding(key, modifiers)
 {

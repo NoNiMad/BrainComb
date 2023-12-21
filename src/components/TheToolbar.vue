@@ -1,9 +1,14 @@
 <script setup>
 import { ref } from "vue";
-import { mdiBrain, mdiFolderOpen, mdiContentSave } from "@mdi/js";
-import { documentService } from "../lib/services";
+import { mdiBrain, mdiFolderOpen, mdiTrayArrowDown, mdiFilePlusOutline } from "@mdi/js";
+import { fileService } from "../lib/services";
 
-const props = defineProps([ "document" ]);
+const { workspace } = defineProps([ "workspace" ]);
+
+function newFile()
+{
+	workspace.newDocument();
+}
 
 const fileInput = ref(null);
 function openFile()
@@ -13,31 +18,36 @@ function openFile()
 function onFileInputChanged(event)
 {
 	const file = event.target.files[0];
-	documentService.loadFromFile(file);
+	fileService.loadFromFile(file);
 }
 
-const downloadLink = ref(null);
-function saveFile()
+function downloadAll()
 {
-	downloadLink.value.href = documentService.getDownloadUrl(props.document);
-	downloadLink.value.download = documentService.getDownloadName();
-	downloadLink.value.click();
+	console.log("Not implemeted.");
 }
 
 </script>
 
 <template>
-	<nav id="toolbar">
+	<nav>
+		<input ref="fileInput" type="file" @change="onFileInputChanged($event)" />
 		<ul>
 			<li>
 				<div class="text-with-icons">
 					<svg-icon :path="mdiBrain"></svg-icon>
 					SimpleMind
 				</div>
-				<input class="hide" ref="fileInput" type="file" @change="onFileInputChanged($event)" />
 			</li>
 		</ul>
 		<ul>
+			<li>
+				<button @click="newFile()">
+					<div class="text-with-icons">
+						<svg-icon :path="mdiFilePlusOutline"></svg-icon>
+						New
+					</div>
+				</button>
+			</li>
 			<li>
 				<button @click="openFile()">
 					<div class="text-with-icons">
@@ -47,12 +57,11 @@ function saveFile()
 				</button>
 			</li>
 			<li>
-				<button @click="saveFile()">
+				<button @click="downloadAll()">
 					<div class="text-with-icons">
-						<svg-icon :path="mdiContentSave"></svg-icon>
-						Download
+						<svg-icon :path="mdiTrayArrowDown"></svg-icon>
+						Download All
 					</div>
-					<a class="hide" ref="downloadLink"></a>
 				</button>
 			</li>
 		</ul>
@@ -60,7 +69,7 @@ function saveFile()
 </template>
 
 <style scoped>
-#toolbar
+nav
 {
 	display: flex;
 	margin: 0;
@@ -69,7 +78,7 @@ function saveFile()
 	background-color: var(--color-bg-alt);
 }
 
-#toolbar ul
+ul
 {
 	display: flex;
 	align-items: center;
@@ -80,13 +89,13 @@ function saveFile()
 	list-style-type: none;
 }
 
-#toolbar li
+li
 {
 	margin: 0;
 	padding: 0;
 }
 
-#toolbar button
+button
 {
 	padding: 0.5em;
 	
@@ -96,12 +105,12 @@ function saveFile()
 	color: var(--color-text);
 }
 
-#toolbar button:hover
+button:hover
 {
 	filter: brightness(120%);
 }
 
-.hide
+input[type="file"]
 {
 	display: none;
 }
