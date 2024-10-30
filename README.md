@@ -1,4 +1,4 @@
-# Simple Mind
+# Brain Comb
 
 A straightforward mind-mapping app with a focus on controlling (almost) everything from the keyboard and being able to customize a lot of things.
 
