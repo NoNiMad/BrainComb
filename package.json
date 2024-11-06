@@ -14,7 +14,7 @@
   },
   "repository": {
 	"type": "git",
-	"url": "git+https://github.com/NoNiMad/SimpleMind.git"
+	"url": "git+https://github.com/NoNiMad/BrainComb.git"
   },
   "dependencies": {
     "@mdi/js": "^7.1.96",

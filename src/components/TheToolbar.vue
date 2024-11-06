@@ -32,7 +32,7 @@ function saveFile()
 			<li>
 				<div class="text-with-icons">
 					<svg-icon :path="mdiBrain"></svg-icon>
-					SimpleMind
+					BrainComb
 				</div>
 				<input class="hide" ref="fileInput" type="file" @change="onFileInputChanged($event)" />
 			</li>

@@ -2,7 +2,7 @@ import { Service } from "./Service";
 
 export default class DocumentService extends Service
 {
-	#lastDocumentName = "SimpleMind.json";
+	#lastDocumentName = "BrainComb.json";
 
 	loadFromFile(file)
 	{
