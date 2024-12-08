@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { mdiBrain, mdiFolderOpen, mdiContentSave } from "@mdi/js";
 import { documentService } from "../lib/services";
+import IconButton from "./IconButton.vue";
 
 const props = defineProps([ "document" ]);
 
@@ -27,82 +28,26 @@ function saveFile()
 </script>
 
 <template>
-	<nav id="toolbar">
-		<ul>
-			<li>
-				<div class="text-with-icons">
-					<svg-icon :path="mdiBrain"></svg-icon>
-					BrainComb
-				</div>
-				<input class="hide" ref="fileInput" type="file" @change="onFileInputChanged($event)" />
-			</li>
-		</ul>
-		<ul>
-			<li>
-				<button @click="openFile()">
-					<div class="text-with-icons">
-						<svg-icon :path="mdiFolderOpen"></svg-icon>
-						Open
-					</div>
-				</button>
-			</li>
-			<li>
-				<button @click="saveFile()">
-					<div class="text-with-icons">
-						<svg-icon :path="mdiContentSave"></svg-icon>
-						Download
-					</div>
-					<a class="hide" ref="downloadLink"></a>
-				</button>
-			</li>
-		</ul>
+	<nav class="bg-bg-alt flex gap-1 p-2 items-center">
+		<SvgIcon :path="mdiBrain"></SvgIcon>
+		<div>BrainComb</div>
+
+		<div class="m-2 h-full border-l-4 border-bg border-dotted"></div>
+
+		<IconButton
+			@click="openFile()"
+			:icon="mdiFolderOpen"
+			text="Open"
+			:icon-only="true">
+		</IconButton>
+		<IconButton
+			@click="saveFile()"
+			:icon="mdiContentSave"
+			text="Download"
+			:icon-only="true">
+		</IconButton>
+
+		<input class="hidden" ref="fileInput" type="file" @change="onFileInputChanged($event)" />
+		<a class="hidden" ref="downloadLink"></a>
 	</nav>
 </template>
-
-<style scoped>
-#toolbar
-{
-	display: flex;
-	margin: 0;
-	padding: 0;
-
-	background-color: var(--color-bg-alt);
-}
-
-#toolbar ul
-{
-	display: flex;
-	align-items: center;
-	gap: 0.3em;
-	margin: 0;
-	padding: 0.4em;
-
-	list-style-type: none;
-}
-
-#toolbar li
-{
-	margin: 0;
-	padding: 0;
-}
-
-#toolbar button
-{
-	padding: 0.5em;
-	
-	border: none;
-	outline: none;
-	background-color: var(--color-bg);
-	color: var(--color-text);
-}
-
-#toolbar button:hover
-{
-	filter: brightness(120%);
-}
-
-.hide
-{
-	display: none;
-}
-</style>

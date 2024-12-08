@@ -59,11 +59,11 @@ function onNodeInputValidate(event)
 	<foreignObject
 		v-show="props.active"
 		:x="view.x"
-		:y="view.y"
-		:width="300"
+		:y="view.y + 20"
+		width="300"
 		:height="props.settings.leaveHeight / 2">
 		<input
-			id="map-input"
+			class="m-0 p-1 w-full h-full border-2 rounded border-solid border-bg-alt outline-none bg-bg"
 			ref="inputField"
 			type="text"
 			v-model="editionState.content"
@@ -71,16 +71,3 @@ function onNodeInputValidate(event)
 			@keydown.esc="onNodeInputCancel($event)" />
 	</foreignObject>
 </template>
-
-<style>
-#map-input
-{
-	margin: 0;
-	padding: 0;
-	width: calc(100% - 8px);
-	height: calc(100% - 6px);
-
-	border: 1px solid black;
-	outline: none;
-}
-</style>

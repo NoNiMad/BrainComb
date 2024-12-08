@@ -1,72 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
 	--color-bg: #222831;
 	--color-bg-alt: #393E46;
 	--color-accent: #00ADB5;
 	--color-text: #EEEEEE;
-}
-
-html,
-body,
-#app-container,
-#app
-{
-	width: 100%;
-	height: 100%;
-
-	margin: 0;
-	padding: 0;
 
 	color: var(--color-text);
 	background-color: var(--color-bg);
 
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.text-with-icons
-{
-	margin-top: -11px;
-}
-
-.text-with-icons svg-icon
-{
-	position: relative;
-	top: 7px;
-}
-
-aside
-{
-	position: absolute;
-	top: 1em;
-	z-index: 1000;
-}
-
-aside.left-side-panels
-{
-	left: 1em;
-}
-aside.right-side-panels
-{
-	right: 1em;
-}
-
-aside section
-{
-	padding: 1em;
-
-	border-radius: 0.5em;
-	background-color: var(--color-bg-alt);
-	
-	opacity: 0.5;
-	transition: opacity 0.5s;
-}
-
-aside section:hover
-{
-	opacity: 1;
-}
-
-aside section header
-{
-	font-size: 1.5em;
-	margin-bottom: 0.5em;
 }

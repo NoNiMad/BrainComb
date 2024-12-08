@@ -7,13 +7,7 @@ export default defineConfig({
 	build: {
 		minify: false
 	},
-  	plugins: [
-		vue({
-			template: {
-				compilerOptions: {
-					isCustomElement: tag => [ "svg-icon" ].includes(tag)
-				}
-			}
-		})
+	plugins: [
+		vue()
 	],
 })

@@ -1,10 +1,8 @@
 <script setup>
-import { reactive } from "vue";
+import { ref } from "vue";
 import { documentService } from "../lib/services";
 
-const state = reactive({
-	isDrapDropActive: false
-});
+const isDrapDropActive = ref(false);
 
 let dragTarget;
 document.addEventListener("dragenter", event => {
@@ -13,7 +11,7 @@ document.addEventListener("dragenter", event => {
 
 	dragTarget = event.target;
 	
-	state.isDrapDropActive = true;
+	isDrapDropActive.value = true;
 	return false;
 });
 
@@ -22,7 +20,7 @@ document.addEventListener("dragleave", event => {
 	{
 		event.stopPropagation();
 		event.preventDefault();
-		state.isDrapDropActive = false;
+		isDrapDropActive.value = false;
 	}
 	return false;
 });
@@ -37,7 +35,7 @@ document.addEventListener("drop", event => {
 	event.stopPropagation();
 	event.preventDefault();
 
-	state.isDrapDropActive = false;
+	isDrapDropActive.value = false;
 
 	const filesArray = event.dataTransfer.files;
 	if (filesArray.length == 0)
@@ -49,38 +47,11 @@ document.addEventListener("drop", event => {
 </script>
 
 <template>
-	<div id="global-drag-drop" v-show="state.isDrapDropActive">
-		<div>
+	<div id="global-drag-drop"
+		class="z-50 absolute w-full h-full flex justify-center items-center text-center backdrop-blur-sm"
+		v-show="isDrapDropActive">
+		<div class="p-4 rounded bg-bg-alt">
 			Drop your document to load it
 		</div>
 	</div>
 </template>
-
-<style>
-#global-drag-drop
-{
-	z-index: 1000;
-
-	position: absolute;
-	width: 100%;
-	height: 100%;
-
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	text-align: center;
-
-	background-color: var(--color-bg);
-	filter: opacity(80%);
-}
-
-#global-drag-drop > div
-{
-	padding: 1em;
-
-	border: 1px solid black;
-	border-radius: 1em;
-
-	background-color: var(--color-bg-alt);
-}
-</style>

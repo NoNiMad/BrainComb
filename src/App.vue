@@ -47,8 +47,8 @@ const data = reactive({
 	mapRoot: defaultMap,
 	settings:
 	{
-		leaveHeight: 60,
-		horizontalSpace: 70
+		leaveHeight: 50,
+		horizontalSpace: 100
 	},
 	ui:
 	{
@@ -72,6 +72,7 @@ function onFileLoaded(event)
 
 const mindmap = ref(null);
 import { useViewBox } from "./composables/viewBox.js";
+import SidePanel from "./components/SidePanel.vue";
 const { view, viewBox } = useViewBox(mindmap);
 const showZoom = computed(() => Math.round(view.zoom * 100) != 100);
 const zoomText = computed(() => {
@@ -81,10 +82,10 @@ const zoomText = computed(() => {
 
 //#endregion
 
-const commands = reactive({
+const commands = ref({
 	editNode: new Command(() => edition.isEditingNode = true, () => !edition.isEditingNode),
-	collapseNode: new Command(() => collapseNode(edition.selected), () => edition.selected.children.length > 0),
-	deleteNode: new Command(() => deleteNode(edition.selected), () => edition.selected.parent != null),
+	collapseNode: new Command(() => collapseNode(edition.selected), () => edition.selected && edition.selected.children.length > 0),
+	deleteNode: new Command(() => deleteNode(edition.selected), () => edition.selected?.parent != null),
 	
 	selectUp: new Command(() => select(NavigationController.getNodeUp(data.mapRoot, edition.selected))),
 	selectDown: new Command(() => select(NavigationController.getNodeDown(data.mapRoot, edition.selected))),
@@ -96,16 +97,16 @@ const commands = reactive({
 				edition.selected.parent,
 				edition.selected.parent.children.indexOf(edition.selected) - 1),
 		() => canMoveNode(edition.selected,
-				edition.selected.parent,
-				edition.selected.parent.children.indexOf(edition.selected) - 1),
+				edition.selected?.parent,
+				edition.selected?.parent?.children.indexOf(edition.selected) - 1),
 	),
 	moveDown: new Command(
 		() => moveNode(edition.selected,
 				edition.selected.parent,
 				edition.selected.parent.children.indexOf(edition.selected) + 1),
 		() => canMoveNode(edition.selected,
-				edition.selected.parent,
-				edition.selected.parent.children.indexOf(edition.selected) + 1),
+				edition.selected?.parent,
+				edition.selected?.parent?.children.indexOf(edition.selected) + 1),
 	),
 	addBefore: new Command(
 		() => {
@@ -115,7 +116,7 @@ const commands = reactive({
 				edition.selected.parent.children.indexOf(edition.selected))
 			select(newNode);
 		},
-		() => edition.selected.parent !== null
+		() => edition.selected?.parent !== null
 	),
 	addAfter: new Command(
 		() => {
@@ -125,7 +126,7 @@ const commands = reactive({
 				edition.selected.parent.children.indexOf(edition.selected) + 1)
 			select(newNode);
 		},
-		() => edition.selected.parent !== null
+		() => edition.selected?.parent !== null
 	),
 	addChild: new Command(() => {
 		const newNode = makeNode();
@@ -134,19 +135,19 @@ const commands = reactive({
 	}),
 });
 
-const bindings = reactive([
-	new KeyBinding("Edit node", "Enter", {}, commands.editNode),
-	new KeyBinding("Collapse node", "c", {}, commands.collapseNode),
-	new KeyBinding("Remove node", "Delete", {}, commands.deleteNode),
-	new KeyBinding("Select up", "ArrowUp", {}, commands.selectUp),
-	new KeyBinding("Select down", "ArrowDown", {}, commands.selectDown),
-	new KeyBinding("Select left", "ArrowLeft", {}, commands.selectLeft),
-	new KeyBinding("Select right", "ArrowRight", {}, commands.selectRight),
-	new KeyBinding("Move up", "ArrowUp", { alt: true }, commands.moveUp),
-	new KeyBinding("Move down", "ArrowDown", { alt: true }, commands.moveDown),
-	new KeyBinding("Add sibling before", "ArrowUp", { shift: true }, commands.addBefore),
-	new KeyBinding("Add sibling after", "ArrowDown", { shift: true }, commands.addAfter),
-	new KeyBinding("Add child", "ArrowRight", { shift: true }, commands.addChild)
+const bindings = ref([
+	new KeyBinding("Edit node", "Enter", {}, commands.value.editNode),
+	new KeyBinding("Collapse node", "c", {}, commands.value.collapseNode),
+	new KeyBinding("Remove node", "Delete", {}, commands.value.deleteNode),
+	new KeyBinding("Select up", "ArrowUp", {}, commands.value.selectUp),
+	new KeyBinding("Select down", "ArrowDown", {}, commands.value.selectDown),
+	new KeyBinding("Select left", "ArrowLeft", {}, commands.value.selectLeft),
+	new KeyBinding("Select right", "ArrowRight", {}, commands.value.selectRight),
+	new KeyBinding("Move up", "ArrowUp", { alt: true }, commands.value.moveUp),
+	new KeyBinding("Move down", "ArrowDown", { alt: true }, commands.value.moveDown),
+	new KeyBinding("Add sibling before", "ArrowUp", { shift: true }, commands.value.addBefore),
+	new KeyBinding("Add sibling after", "ArrowDown", { shift: true }, commands.value.addAfter),
+	new KeyBinding("Add child", "ArrowRight", { shift: true }, commands.value.addChild)
 ]);
 
 function scheduleAutoLayout()
@@ -272,7 +273,7 @@ function moveNode(node, targetParent, index)
 
 function canMoveNode(node, targetParent, index)
 {
-	if (node.parent === null)
+	if (!node?.parent)
 		return false;
 	
 	if (node.parent == targetParent)
@@ -356,35 +357,38 @@ const connectionsToDraw = computed(() =>
 </script>
 
 <template>
-	<div ref="appContainer" id="app" tabindex="0">
+	<div ref="appContainer" class="relative flex flex-col w-full h-full" tabindex="0">
 		<TheFileDragDrop />
 		<TheToolbar :document="data.mapRoot" />
 		<div
 			ref="mindmapContainer"
-			id="mindmap-container">
+			class="relative grow">
 			<div
 				id="mindmap-background"
+				class="-z-50 absolute w-full h-full"
 				:style="{
 					backgroundPositionX: `${-view.center.x * view.zoom}px`,
 					backgroundPositionY: `${-view.center.y * view.zoom}px`,
 					backgroundSize: `${view.zoom*100}px ${view.zoom*100}px, ${view.zoom*20}px ${view.zoom*20}px`
 				}">
 			</div>
-			<aside class="left-side-panels">
+
+			<aside class="absolute z-10 top-4 left-4">
 				<KeyBindingsListener :bindings="bindings" :disabled="edition.isEditingNode" />
 			</aside>
-			<aside class="right-side-panels">
-				<section v-show="showZoom">
-					<article class="text-with-icons">
-						{{ zoomText }}
-						<svg-icon :path="mdiMagnify"></svg-icon>
+			<aside class="absolute z-10 top-4 right-4">
+				<SidePanel v-show="showZoom">
+					<article class="flex">
+						<SvgIcon :path="mdiMagnify"></SvgIcon>
+						<span>{{ zoomText }}</span>
 					</article>
-				</section>
+				</SidePanel>
 			</aside>
+
 			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				id="mindmap"
 				ref="mindmap"
+				class="left-0 top-0 w-full h-full"
+				xmlns="http://www.w3.org/2000/svg"
 				:view-box.camel="viewBox">
 				<g
 					v-for="node in nodesToDraw"
@@ -396,14 +400,14 @@ const connectionsToDraw = computed(() =>
 					:transform="`translate(${node.x}, ${node.y})`"
 
 					:data-node="node.id"
-					class="node"
-					:class="{ selected: edition.selected === node, collapsed: node.collapsed }">
+					class="fill-text underlin"
+					:class="{ 'selected-node': edition.selected === node, italic: node.collapsed }">
 					<text>{{node.content}}</text>
 				</g>
 				<g
 					v-for="conn in connectionsToDraw"
 					:key="conn.id"
-					class="connection">
+					class="stroke-text">
 					<path
 						:d="conn.path"
 						stroke="white"
@@ -421,63 +425,21 @@ const connectionsToDraw = computed(() =>
 </template>
 
 <style scoped>
-#app
-{
-	position: relative;
-	display: flex;
-	flex-direction: column;
-}
-
-#mindmap-container
-{
-	position: relative;
-	flex-grow: 1;
-}
-
+/*
 #mindmap-background
 {
-	display: none;
-	width: 100%;
-	height: 100%;
 	background-image:
 		conic-gradient(at calc(100% - 2px) calc(100% - 2px),#555 270deg, #0000 0),
 		conic-gradient(at calc(100% - 1px) calc(100% - 1px),#444 270deg, #0000 0);
 	background-size: 100px 100px, 20px 20px;
 }
+*/
 
-#mindmap-container > *
+.selected-node
 {
-	position: absolute;
-	overflow: hidden;
-}
-
-#mindmap
-{
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-}
-
-#mindmap .node
-{
-	fill: var(--color-text);
-	position: relative;
-}
-
-#mindmap .node.selected
-{
-	fill: red;
-}
-
-#mindmap .node.collapsed
-{
-	font-style: italic;
-}
-
-#mindmap .connection
-{
-	stroke: var(--color-text);
-	fill: transparent;
+	fill: var(--color-accent);
+	font-weight: bold;
+	text-decoration: underline;
+	text-underline-offset: 0.25em;
 }
 </style>

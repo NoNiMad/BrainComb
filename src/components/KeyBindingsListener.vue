@@ -1,5 +1,8 @@
 <script setup>
 import { mdiArrowUpThin, mdiArrowDownThin, mdiArrowLeftThin, mdiArrowRightThin } from "@mdi/js";
+import { computed } from "vue";
+
+import SidePanel from "./SidePanel.vue";
 
 const props = defineProps([ "bindings", "disabled" ]);
 
@@ -7,6 +10,7 @@ document.addEventListener("keydown", event => {
 	if (event.defaultPrevented || event.isComposing || props.disabled)
 		return;
 	
+	console.log("prout");
 	const binding = findBinding(event.key, {
 		ctrl: event.ctrlKey,
 		alt: event.altKey,
@@ -54,53 +58,30 @@ function getIconPathFor(key)
 {
 	return iconKeyMap[key];
 }
+
+const bindingsWithCanExecute = computed(() => props.bindings.map(b => {
+		return {
+			value: b,
+			canExecute: b.command.canExecute()
+		};
+	}));
 </script>
 
 <template>
-<section
-	id="key-bindings-panel"
-	:class="{ disabled: props.disabled }">
-	<header>Shortcuts</header>
+<SidePanel title="Shortcuts">
 	<article
-		class="key-binding"
-		v-for="binding in props.bindings"
-		:key="binding.name">
-		<div class="key" v-if="binding.ctrl">Ctrl</div>
-		<div class="key" v-if="binding.alt">Alt</div>
-		<div class="key" v-if="binding.shift">Shift</div>
-		<div class="key" v-if="shouldDisplayKeyName(binding.key)">{{ binding.key }}</div>
-		<div class="key" v-else>
-			<svg-icon :path="getIconPathFor(binding.key)"></svg-icon>
+		v-for="binding in bindingsWithCanExecute"
+		class="my-1 flex gap-1 items-center"
+		:class="{ 'opacity-50': !binding.canExecute }"
+		:key="binding.value.name">
+		<div class="bg-bg py-0.5 px-1" v-if="binding.value.ctrl">Ctrl</div>
+		<div class="bg-bg py-0.5 px-1" v-if="binding.value.alt">Alt</div>
+		<div class="bg-bg py-0.5 px-1" v-if="binding.value.shift">Shift</div>
+		<div class="bg-bg py-0.5 px-1" v-if="shouldDisplayKeyName(binding.value.key)">{{ binding.value.key }}</div>
+		<div class="bg-bg py-0.5 px-1" v-else>
+			<SvgIcon :path="getIconPathFor(binding.value.key)"></SvgIcon>
 		</div>
-		<div>{{ binding.name }}</div>
+		<div>{{ binding.value.name }}</div>
 	</article>
-</section>
+</SidePanel>
 </template>
-
-<style scoped>
-section.disabled .key-binding
-{
-	opacity: 0.5;
-}
-
-.key-binding
-{
-	margin: 0.2em 0;
-
-	display: flex;
-	gap: 0.2em;
-	align-items: center;
-}
-
-.key-binding > *
-{
-	height: 24px;
-	line-height: 24px;
-}
-
-.key
-{
-	background-color: var(--color-bg);
-	padding: 0.1em 0.3em;
-}
-</style>
